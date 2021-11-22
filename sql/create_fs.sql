@@ -1,0 +1,1 @@
+create database if not exists emr_feature_store location @DBLocation@;
