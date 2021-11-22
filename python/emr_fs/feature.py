@@ -16,48 +16,33 @@ class Feature:
         self,
         name,
         type=None,
-        description=None,
         primary=None,
         partition=None,
         hudi_precombine_key=None,
-        online_type=None,
         default_value=None,
-        feature_group_id=None,
         feature_group=None,
     ):
         self._name = name.lower()
         self._type = type
-        self._description = description
         self._primary = primary or False
         self._partition = partition or False
         self._hudi_precombine_key = hudi_precombine_key or False
-        self._online_type = online_type
         self._default_value = default_value
-        if feature_group is not None:
-            self._feature_group_id = feature_group.id
-        else:
-            self._feature_group_id = feature_group_id
+        self._feature_group = feature_group
 
     def to_dict(self):
         return {
             "name": self._name,
             "type": self._type,
-            "description": self._description,
             "partition": self._partition,
             "hudiPrecombineKey": self._hudi_precombine_key,
             "primary": self._primary,
-            "onlineType": self._online_type,
             "defaultValue": self._default_value,
-            "featureGroupId": self._feature_group_id,
+            "featureGroup": self._feature_group,
         }
 
     def json(self):
         return json.dumps(self, cls=util.FeatureStoreEncoder)
-
-    @classmethod
-    def from_response_json(cls, json_dict):
-        json_decamelized = humps.decamelize(json_dict)
-        return cls(**json_decamelized)
 
     def is_complex(self):
         """Returns true if the feature has a complex type."""
@@ -87,14 +72,6 @@ class Feature:
     def type(self, type):
         self._type = type
 
-    @property
-    def online_type(self):
-        """Data type of the feature in the online feature store."""
-        return self._online_type
-
-    @online_type.setter
-    def online_type(self, online_type):
-        self._online_type = online_type
 
     @property
     def primary(self):

@@ -8,3 +8,5 @@ create table test_hudi_table
   using hudi
   partitioned by (@partition_key@)
   options ( primaryKey = @primaryKey@,  type = 'cow' )
+
+  field = Regex.Replace(field.ToLower(), @"select\s+|\s+from\s+|\[|\]", "");

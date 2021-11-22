@@ -78,8 +78,7 @@ class FeatureGroupBase:
         return query.Query(
             left_feature_group=self,
             left_features=self._features,
-            feature_store_name=self._feature_store_name,
-            feature_store_id=self._feature_store_id,
+            feature_store_name=self._feature_store_name
         )
 
     def select(self, features: List[Union[str, feature.Feature]] = []):
@@ -95,12 +94,9 @@ class FeatureGroupBase:
         # Returns
             `Query`: A query object with the selected features of the feature group.
         """
-        return query.Query(
-            left_feature_group=self,
-            left_features=features,
-            feature_store_name=self._feature_store_name,
-            feature_store_id=self._feature_store_id,
-        )
+        row_df = spark.read.format("hudi").option()
+        return row_df.select(features)
+
 
     def select_except(self, features: List[Union[str, feature.Feature]] = []):
         """Select all features of the feature group except a few and return a query
