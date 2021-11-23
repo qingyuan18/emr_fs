@@ -1,25 +1,3 @@
-class RestAPIError(Exception):
-    """REST Exception encapsulating the response object and url."""
-
-    def __init__(self, url, response):
-        error_object = response.json()
-        message = (
-            "Metadata operation error: (url: {}). Server response: \n"
-            "HTTP code: {}, HTTP reason: {}, error code: {}, error msg: {}, user "
-            "msg: {}".format(
-                url,
-                response.status_code,
-                response.reason,
-                error_object.get("errorCode", ""),
-                error_object.get("errorMsg", ""),
-                error_object.get("usrMsg", ""),
-            )
-        )
-        super().__init__(message)
-        self.url = url
-        self.response = response
-
-
 class UnknownSecretStorageError(Exception):
     """This exception will be raised if an unused secrets storage is passed as a parameter."""
 

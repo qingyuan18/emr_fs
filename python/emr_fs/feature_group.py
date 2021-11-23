@@ -14,16 +14,13 @@
 #   limitations under the License.
 #
 
-import humps
-import json
-import warnings
+
 import pandas as pd
 import numpy as np
 import avro.schema
-from typing import Optional, Union, Any, Dict, List, TypeVar
 
 from emr_fs import util, engine, feature, user, storage_connector as sc
-from emr_fs.core import (
+from emr_fs.engine import (
     feature_group_engine,
     statistics_engine,
     code_engine,
@@ -32,8 +29,6 @@ from emr_fs.core import (
     on_demand_feature_group_engine,
     expectations_api,
 )
-from emr_fs.constructor import query
-from emr_fs.exceptions import FeatureStoreException
 
 
 class FeatureGroupBase:

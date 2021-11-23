@@ -14,10 +14,7 @@
 #   limitations under the License.
 #
 
-from emr_fs.core import feature_group_api, storage_connector_api, tags_api, kafka_api
-
-
-class FeatureGroupBaseEngine:
+class FeatureBaseEngine:
     ENTITY_TYPE = "featuregroups"
 
     def __init__(self, feature_store_id):

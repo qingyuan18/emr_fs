@@ -1,5 +1,5 @@
 import json
-
+import re
 from emr_fs import util
 
 
@@ -41,7 +41,25 @@ class Feature:
             "featureGroup": self._feature_group,
         }
 
-    def json(self):
+
+    def parse_to_features(self,tableDes):
+        retFeatures = []
+        tlbColGrgs=re.findall("(.+)",tableDes)
+        for tlbColGrg in tlbColGrgs:
+            if tlbColGrg.contains("partition"):
+               ###primary key #####
+               retFeatures.append(self.getPkFeature(tlbColGrg))
+            else if tlbColGrg.contains("tableproperities"):
+               continue
+            else:
+               ####other parse_to_features #######
+               retFeatures.append(self.getNormalFeature(tlbColGrg))
+        return retFeatures
+
+    def  getNormalFeature(self):
+        pass
+
+    def getPkFeature(self):
         return json.dumps(self, cls=util.FeatureStoreEncoder)
 
     def is_complex(self):

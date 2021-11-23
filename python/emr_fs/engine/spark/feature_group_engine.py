@@ -21,7 +21,7 @@ from emr_fs.core import feature_group_base_engine
 from emr_fs.engine import hudi_engine
 
 
-class FeatureGroupEngine(feature_group_base_engine.FeatureGroupBaseEngine):
+class FeatureGroupEngine(feature_group_base_engine.FeatureBaseEngine):
     def __init__(self, feature_store_id):
         super().__init__(feature_store_id)
 

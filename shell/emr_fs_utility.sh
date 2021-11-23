@@ -20,7 +20,7 @@ parseArgs() {
         printUsage
         exit 0
     fi
-    optString="emr-cluster-id:,feature-store-location:,feature-store-group-name:,version-start-dt:,version-end-dt:,ingest-s3-data:,sychronize-online-featureStore"
+    optString="emr-cluster-id:,feature-store-location:,feature-store-group-name:,version-start-dt:,version-end-dt:,ingest-s3-data:,sychronize-online-featureStore:,feature-unique-Id:,feature-timestamp-key:,feature-normal-keys:"
     # IMPORTANT!! -o option can not be omitted, even there are no any short options!
     # otherwise, parsing will go wrong!
     OPTS=$(getopt -o "" -l "$optString" -- "$@")
@@ -39,6 +39,18 @@ parseArgs() {
                 ;;
             --feature-store-group-name)
                 FEATURE_STORE_GROUP_NAME="$2"
+                shift 2
+                ;;
+            --feature-unique-Id)
+                FEATURE_UNIQUE_ID="$2"
+                shift 2
+                ;;
+            --feature-timestamp-key)
+                FEATURE_TIMESTAMP_KEY="$2"
+                shift 2
+                ;;
+            --feature-normal-keys)
+                FEATURE_NORMAL_KEYS="$2"
                 shift 2
                 ;;
             --feature-store-location)
@@ -78,6 +90,9 @@ while true; do
        read -p "please input emr-cluster-id:"  EMR_CLUSTER_ID
 	     read -p "please input feature-store-group-name:"  FEATURE_STORE_GROUP_NAME
 	     read -p "please input feature store location(s3):" FEATURE_STORE_LOCATION
+	     read -p "please input feature timestamp key(e.g eventtime:string):" FEATURE_TIMESTAMP_KEY
+	     read -p "please input feature unique key(e.g: userid:string):" FEATURE_UNIQUE_ID
+	     read -p "please input feature other keys(e.g: feature1:string, feature2:int, feature3:string):" FEATURE_NORMAL_KEYS
 	##   ##检查emr集群connectivity，IAM权限及Hudi
 	##   #checkEMRHudi($EMR_CLUSTER_ID)
 	##   #createFeatureStore($EMR_CLUSTER_ID,$FEATURE_STORE_GROUP_NAME)
