@@ -21,7 +21,7 @@ from datetime import datetime
 from emr_fs import client, feature
 
 
-def __exec_command(cmd: str, timeout=10) -> str:
+def exec_command(cmd: str, timeout=10) -> str:
     try:
         output_bytes = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True, timeout=timeout)
     except subprocess.CalledProcessError as err:

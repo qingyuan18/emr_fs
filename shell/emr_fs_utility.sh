@@ -7,7 +7,7 @@ printUsage() {
     echo "l)list feature store group "
 	  echo "p)inspect feature store group"
 	  echo "q)versioning(time travel) query "
-    echo "l)ingest to offline feature store"
+    echo "l)register offline feature group"
     echo "s)sychronize offline to online feature store"
     echo "q)quit"
     echo "****************************************************************************"

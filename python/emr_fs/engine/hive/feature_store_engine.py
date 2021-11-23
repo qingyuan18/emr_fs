@@ -17,28 +17,48 @@ import warnings
 
 from emr_fs import engine, client, util, exceptions
 from emr_fs import feature_group as fg
-from emr_fs.engine import FeatureBaseEngine
+from emr_fs.engine.feature_group_base_engine import FeatureBaseEngine
 from pyhive import hive
+from util import *
 import pandas as pd
+from emr_fs.logger import Log
+
 
 
 class FeatureStoreEngine(feature_group_base_engine.FeatureBaseEngine):
-    def __init__(self,emr_cluster_id, feature_store_name):
-        super().__init__(feature_store_id)
-        # cache online feature store connector
+    def __init__(self,emr_master_node):
+        self.logger = Log("file")
+        self._master_node = emr_master_node
+        self._con = hive.Connection(host=self._master_node, port='10000', username='hive')
+        super().__init__()
 
-    def create_feature_store(self, name,description,s3_store_path):
-        con=hive.Connection(host='localhost', port='10000', username='hive')
-        cursor=con.cursor()
+    def __exit__():
+        self._con.close()
+
+    def create_feature_store(self, name,desc,location):
+        cursor=self._con.cursor()
         sql="create database if not exists @emr_feature_store@ comment 'emr_feature_store for sagemaker' location @DBLocation@;".replace("@emr_feature_store@",name).replace("@DBLocation@",s3_store_path)
         if description  is not None:
            sql.replace("emr_feature_store for sagemaker",description)
         cursor.execute(sql)
-        data=pd.DataFrame(cursor.fetchall())
-        print(data.head())
-        return true
+        #data=pd.DataFrame(cursor.fetchall())
+        self.logger.info("created emr feature store: "+name)
 
 
+    def get_feature_groups(feature_store_name,feature_group_name):
+        cmd = "line=$(hive -e \"use @db_name@; show tables\") && echo $line".replace("@db_name@",feature_store_name)
+        feature_groups = exec_command(cmd,60).split(" ")
+        ret_feature_groups=[]
+        for feature_group in feature_groups:
+            if feature_group.contains(feature_group_name):
+               ret_feature_groups.append(feature_group)
+        return ret_feature_groups
+
+
+    def inspect_feature_group(feature_store_name,feature_group_name):
+        cmd = "emr_fs_exec.sh inspect "+feature_store_name + " feature_group_name"
+        features = exec_command(cmd,60).split(" ")
+        return features
 
     def delete(self, feature_group):
         self._feature_group_api.delete(feature_group)

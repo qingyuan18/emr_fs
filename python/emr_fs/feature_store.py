@@ -18,22 +18,25 @@ import numpy
 import datetime
 from typing import Optional, Union, List, Dict, TypeVar
 from emr_fs.transformation_function import TransformationFunction
-from emr_fs.engine import *
+from emr_fs.engine.hive import FeatureStoreEngine
 from emr_fs.statistics_config import StatisticsConfig
 
 
 class FeatureStore:
     def __init__(
         self,
+        emr_cluster_id,
+        emr_master_node,
         featurestore_name,
-        created,
         s3_store_path,
         featurestore_description,
     ):
+        self._emr_cluster_id = emr_cluster_id
+        self._emr_master_node= emr_master_node
         self._name = featurestore_name
         self._description = featurestore_description
-        self.s3_store_path = s3_store_path
-        self._feature_store_engine = _feature_store_engine.FeatureStoreEngine(self._name)
+        self._s3_store_path = s3_store_path
+        self._feature_store_engine = FeatureStoreEngine(self._name)
         self._feature_group_engine = feature_group_engine.FeatureGroupEngine(self._name)
         self._transformation_function_engine = (
             transformation_function_engine.TransformationFunctionEngine(self._name)
@@ -42,92 +45,26 @@ class FeatureStore:
 
 
     def get_feature_groups(self, name: str):
-        """Get a list of all versions of a feature group entity from the feature store.
-
-        Getting a feature group from the Feature Store means getting its metadata handle
-        so you can subsequently read the data into a Spark or Pandas DataFrame or use
-        the `Query`-API to perform joins between feature groups.
-
+        """Get a list of all feature group entity from the feature store.
         # Arguments
             name: Name of the feature group to get.
-
         # Returns
             `FeatureGroup`: List of feature group metadata objects.
-
         # Raises
-            `RestAPIError`: If unable to retrieve feature group from the feature store.
-
+            `FeatureStoreException`: If unable to retrieve feature group from the feature store.
         """
-        return self._feature_group_api.get(
-            name, None, feature_group_api.FeatureGroupApi.CACHED
-        )
+        return self._feature_store_engine.get_feature_groups(name)
 
-    def get_on_demand_feature_group(self, name: str, version: int = None):
-        """Get a on-demand feature group entity from the feature store.
 
-        Getting a on-demand feature group from the Feature Store means getting its
-        metadata handle so you can subsequently read the data into a Spark or
-        Pandas DataFrame or use the `Query`-API to perform joins between feature groups.
 
-        # Arguments
-            name: Name of the on-demand feature group to get.
-            version: Version of the on-demand feature group to retrieve,
-                defaults to `None` and will return the `version=1`.
 
-        # Returns
-            `OnDemandFeatureGroup`: The on-demand feature group metadata object.
-
-        # Raises
-            `RestAPIError`: If unable to retrieve feature group from the feature store.
-
-        """
-
-        if version is None:
-            warnings.warn(
-                "No version provided for getting feature group `{}`, defaulting to `{}`.".format(
-                    name, self.DEFAULT_VERSION
-                ),
-                util.VersionWarning,
-            )
-            version = self.DEFAULT_VERSION
-        return self._feature_group_api.get(
-            name, version, feature_group_api.FeatureGroupApi.ONDEMAND
-        )
-
-    def get_training_dataset(self, name: str, version: int = None):
-        """Get a training dataset entity from the feature store.
-
-        Getting a training dataset from the Feature Store means getting its metadata handle
-        so you can subsequently read the data into a Spark or Pandas DataFrame.
-
-        # Arguments
-            name: Name of the training dataset to get.
-            version: Version of the training dataset to retrieve, defaults to `None` and will
-                return the `version=1`.
-
-        # Returns
-            `TrainingDataset`: The training dataset metadata object.
-
-        # Raises
-            `RestAPIError`: If unable to retrieve feature group from the feature store.
-        """
-
-        if version is None:
-            warnings.warn(
-                "No version provided for getting training dataset `{}`, defaulting to `{}`.".format(
-                    name, self.DEFAULT_VERSION
-                ),
-                util.VersionWarning,
-            )
-            version = self.DEFAULT_VERSION
-        return self._training_dataset_api.get(name, version)
-
-    def create_feature_store(self,name:str,description:str):
-            """Create a feature store db in hive metadata.
-            # Returns
-                `FeatureStore`. The feature store metadata object.
-            """
-        return self._feature_store_engine.create_feature_store(name,description,self.s3_store_path)
+    def create_feature_store(self):
+            """Create a feature store db in hive metadata."""
+        self._feature_store_engine.create_feature_store(
+             master_node=self._emr_master_node,
+             name=self._name,
+             desc=self._description,
+             location=self._s3_store_path)
 
 
 
@@ -222,15 +159,7 @@ class FeatureStore:
         """Name of the feature store."""
         return self._name
 
-    @property
-    def project_name(self):
-        """Name of the project in which the feature store is located."""
-        return self._project_name
 
-    @property
-    def project_id(self):
-        """Id of the project in which the feature store is located."""
-        return self._project_id
 
     @property
     def description(self):
@@ -242,15 +171,7 @@ class FeatureStore:
         """Name of the online feature store database."""
         return self._online_feature_store_name
 
-    @property
-    def mysql_server_endpoint(self):
-        """MySQL server endpoint for the online feature store."""
-        return self._mysql_server_endpoint
 
-    @property
-    def online_enabled(self):
-        """Indicator whether online feature store is enabled."""
-        return self._online_enabled
 
     @property
     def hive_endpoint(self):
