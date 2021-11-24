@@ -25,15 +25,61 @@ from emr_fs.logger import Log
 
 
 
-class FeatureStoreEngine(feature_group_base_engine.FeatureBaseEngine):
+class FeatureStoreHiveEngine(feature_group_base_engine.FeatureBaseEngine):
     def __init__(self,emr_master_node):
         self.logger = Log("file")
         self._master_node = emr_master_node
-        self._con = hive.Connection(host=self._master_node, port='10000', username='hive')
         super().__init__()
 
-    def __exit__():
+    def __enter__(self):
+        self._con = hive.Connection(host=self._master_node, port='10000', username='hive')
+
+    def __exit__(self):
         self._con.close()
+
+    def create_feature_group(self,
+                             feature_store_name,feature_group_name, desc,
+                             feature_unique_key,feature_unique_key_type,
+                             feature_eventtime_key,feature_eventtime_key_type,
+                             feature_normal_keys):
+        cursor = self._con.cursor()
+        cursor.execute("use "+feature_store_name+";")
+        sql="CREATE EXTERNAL TABLE @feature_group_nm@( \n"+
+          "`_hoodie_commit_time` string,\n"+
+          "`_hoodie_commit_seqno` string,\n"+
+          "`_hoodie_record_key` string,\n"+
+          "`_hoodie_partition_path` string,\n"+
+          "`_hoodie_file_name` string,\n"+
+          "@feature_unique_key@,\n"+
+          "@feature_normal_keys@)\n"+
+        "PARTITIONED BY (\n"+
+        "  @feature_partitions@)\n"+
+        "ROW FORMAT SERDE\n"+
+        "  'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'\n"+
+        "STORED AS INPUTFORMAT\n"+
+        "  'org.apache.hudi.hadoop.HoodieParquetInputFormat' \n"+
+        "OUTPUTFORMAT \n"+
+        "  'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat' \n"+
+        "TBLPROPERTIES (@tableProps@)"
+
+        tableProps="'feature_unique_key'='"+feature_unique_key+":"+feature_unique_key_type+"',"
+        tableProps=tableProps+"'feature_partition_key='"+feature_partition_key+":"+feature_partition_key_type+"',"
+        partition_keys="("+feature_eventtime_key+" "+feature_eventtime_key_type+")"
+        normal_keys=""
+        tableProps=tableProps+"'feature_normal_keys='("
+        for feature_key in feature_normal_keys:
+           normal_keys.append(feature_key[0]+" "+feature_key[1]+",\n")
+           tableProps.append(feature_key[0]+":"+feature_key[1]+",")
+        tableProps.append("')")
+        sql=sql.replace("@feature_partitions@",partition_keys)
+        sql=sql.replace("@feature_unique_key@",feature_unique_key+" "+feature_unique_key_type)
+        sql=sql.replace("@feature_normal_keys@",normal_keys)
+        sql=sql.replace("@tableProps@",tableProps)
+        cursor.execute(sql)
+        self.logger.info("create emr feature group "+feature_group_name + "in "+ feature_store_name+" result:")
+        for result in cursor.fetchall():
+           self.logger.info(result)
+
 
     def create_feature_store(self, name,desc,location):
         cursor=self._con.cursor()

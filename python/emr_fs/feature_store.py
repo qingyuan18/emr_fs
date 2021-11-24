@@ -18,7 +18,7 @@ import numpy
 import datetime
 from typing import Optional, Union, List, Dict, TypeVar
 from emr_fs.transformation_function import TransformationFunction
-from emr_fs.engine.hive import FeatureStoreEngine
+from emr_fs.engine.hive import FeatureStoreHiveEngine
 from emr_fs.statistics_config import StatisticsConfig
 
 
@@ -36,8 +36,6 @@ class FeatureStore:
         self._name = featurestore_name
         self._description = featurestore_description
         self._s3_store_path = s3_store_path
-        self._feature_store_engine = FeatureStoreEngine(self._name)
-        self._feature_group_engine = feature_group_engine.FeatureGroupEngine(self._name)
         self._transformation_function_engine = (
             transformation_function_engine.TransformationFunctionEngine(self._name)
         )
@@ -53,51 +51,43 @@ class FeatureStore:
         # Raises
             `FeatureStoreException`: If unable to retrieve feature group from the feature store.
         """
-        return self._feature_store_engine.get_feature_groups(name)
+        with FeatureStoreHiveEngine(emr_master_node) as engine:
+            return engine.get_feature_groups(name)
 
 
 
 
     def create_feature_store(self):
             """Create a feature store db in hive metadata."""
-        self._feature_store_engine.create_feature_store(
-             master_node=self._emr_master_node,
-             name=self._name,
-             desc=self._description,
-             location=self._s3_store_path)
+        with FeatureStoreHiveEngine(emr_master_node) as engine:
+           engine.create_feature_store(
+                master_node=self._emr_master_node,
+                name=self._name,
+                desc=self._description,
+                location=self._s3_store_path)
 
 
 
     def create_feature_group(
         self,
-        name: str,
-        description: Optional[str] = "",
-        partition_key: Optional[List[str]] = [],
-        primary_key: Optional[List[str]] = [],
-        hudi_precombine_key: Optional[str] = None,
-        features: Optional[List[feature.Feature]] = [],
+        feature_group_name: str,
+        desc: str = "",
+        feature_unique_key: str,
+        feature_unique_key_type: str = "string",
+        feature_eventtime_key: str,
+        feature_eventtime_key_type: str = "string",
+        feature_normal_keys:  = []
     ):
         """Create a feature group metadata object.
         # Returns
             `FeatureGroup`. The feature group metadata object.
         """
-        return feature_group.FeatureGroup(
-            name=name,
-            version=version,
-            description=description,
-            online_enabled=online_enabled,
-            time_travel_format=time_travel_format,
-            partition_key=partition_key,
-            primary_key=primary_key,
-            hudi_precombine_key=hudi_precombine_key,
-            featurestore_id=self._id,
-            featurestore_name=self._name,
-            features=features,
-            statistics_config=statistics_config,
-            validation_type=validation_type,
-            expectations=expectations,
-            event_time=event_time,
-        )
+        with FeatureStoreHiveEngine(emr_master_node) as engine:
+                   engine.create_feature_group(feature_store_name=self.feature_store_name,feature_group_name, desc,
+                   feature_unique_key,feature_unique_key_type,
+                   feature_eventtime_key,feature_eventtime_key_type,
+                   feature_normal_keys)
+            )
 
 
 

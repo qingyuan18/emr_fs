@@ -17,13 +17,12 @@
 class FeatureBaseEngine:
     ENTITY_TYPE = "featuregroups"
 
-    def __init__(self, feature_store_id):
+    def __init__(self):
         self._tags_api = tags_api.TagsApi(feature_store_id, self.ENTITY_TYPE)
         self._feature_group_api = feature_group_api.FeatureGroupApi(feature_store_id)
         self._storage_connector_api = storage_connector_api.StorageConnectorApi(
             feature_store_id
         )
-        self._kafka_api = kafka_api.KafkaApi()
 
     def delete(self, feature_group):
         self._feature_group_api.delete(feature_group)
