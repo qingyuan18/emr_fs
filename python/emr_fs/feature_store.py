@@ -43,14 +43,6 @@ class FeatureStore:
 
 
     def get_feature_groups(self, name: str):
-        """Get a list of all feature group entity from the feature store.
-        # Arguments
-            name: Name of the feature group to get.
-        # Returns
-            `FeatureGroup`: List of feature group metadata objects.
-        # Raises
-            `FeatureStoreException`: If unable to retrieve feature group from the feature store.
-        """
         with FeatureStoreHiveEngine(emr_master_node) as engine:
             return engine.get_feature_groups(name)
 
@@ -65,6 +57,28 @@ class FeatureStore:
                 name=self._name,
                 desc=self._description,
                 location=self._s3_store_path)
+
+
+    def register_feature_group(
+        self,
+        feature_group_name: str,
+        desc: str = "",
+        feature_unique_key: str,
+        feature_unique_key_type: str = "string",
+        feature_eventtime_key: str,
+        feature_eventtime_key_type: str = "string",
+        feature_normal_keys:  = []
+    ):
+       """register a feature group metadata object in a exsiting hudi table.
+            # Returns
+                `FeatureGroup`. The feature group metadata object.
+       """
+       with FeatureStoreHiveEngine(emr_master_node) as engine:
+             engine.register_feature_group(feature_store_name=self.feature_store_name,feature_group_name, desc,
+                  feature_unique_key,feature_unique_key_type,
+                  feature_eventtime_key,feature_eventtime_key_type,
+                  feature_normal_keys)
+                   )
 
 
 
@@ -83,7 +97,7 @@ class FeatureStore:
             `FeatureGroup`. The feature group metadata object.
         """
         with FeatureStoreHiveEngine(emr_master_node) as engine:
-                   engine.create_feature_group(feature_store_name=self.feature_store_name,feature_group_name, desc,
+             engine.create_feature_group(feature_store_name=self.feature_store_name,feature_group_name, desc,
                    feature_unique_key,feature_unique_key_type,
                    feature_eventtime_key,feature_eventtime_key_type,
                    feature_normal_keys)

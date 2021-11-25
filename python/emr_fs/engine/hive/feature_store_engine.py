@@ -37,6 +37,28 @@ class FeatureStoreHiveEngine(feature_group_base_engine.FeatureBaseEngine):
     def __exit__(self):
         self._con.close()
 
+
+    def register_feature_group(self,
+                             feature_store_name,feature_group_name, desc,
+                             feature_unique_key,feature_unique_key_type,
+                             feature_eventtime_key,feature_eventtime_key_type,
+                             feature_normal_keys):
+        cursor = self._con.cursor()
+        cursor.execute("use "+feature_store_name+";")
+        sql = "alter table  @feature_group_nm@ set tblproperties ('feature_unique_key'='@feature_unique_key_pairs@')".replace("@feature_group_nm@",feature_group_name).replace("@feature_unique_key_pairs@",feature_unique_key+":"+feature_unique_key_type)
+        cursor.execute(sql)
+        sql = "alter table  @feature_group_nm@ set tblproperties ('feature_eventtime_key'='@feature_eventtime_key_pairs@')".replace("@feature_group_nm@",feature_group_name).replace("@feature_eventtime_key_pairs@",feature_eventtime_key+":"+feature_eventtime_key_type)
+        cursor.execute(sql)
+        normal_keys=""
+        for feature_key in feature_normal_keys:
+            normal_keys.append(feature_key[0]+":"+feature_key[1]+",\n")
+        sql = "alter table  @feature_group_nm@ set tblproperties ('feature_normal_keys'='@feature_normal_key_pairs@')".replace("@feature_group_nm@",feature_group_name).replace("@feature_normal_key_pairs@",normal_keys)
+        cursor.execute(sql)
+        self.logger.info("register emr feature group "+feature_group_name + "in "+ feature_store_name+" result:")
+        for result in cursor.fetchall():
+            self.logger.info(result)
+
+
     def create_feature_group(self,
                              feature_store_name,feature_group_name, desc,
                              feature_unique_key,feature_unique_key_type,
@@ -148,18 +170,5 @@ class FeatureStoreHiveEngine(feature_group_base_engine.FeatureBaseEngine):
         # write empty dataframe to update parquet schema
         engine.get_instance().save_empty_dataframe(feature_group, df)
 
-    def update_description(self, feature_group, description):
-        """Updates the description of a feature group."""
-        copy_feature_group = fg.FeatureGroup(
-            None,
-            None,
-            description,
-            None,
-            id=feature_group.id,
-            features=feature_group.features,
-        )
-        self._feature_group_api.update_metadata(
-            feature_group, copy_feature_group, "updateMetadata"
-        )
 
 
