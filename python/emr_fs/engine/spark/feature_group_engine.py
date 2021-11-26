@@ -190,40 +190,6 @@ class FeatureGroupEngine(feature_group_base_engine.FeatureBaseEngine):
         # write empty dataframe to update parquet schema
         engine.get_instance().save_empty_dataframe(feature_group, df)
 
-    def update_description(self, feature_group, description):
-        """Updates the description of a feature group."""
-        copy_feature_group = fg.FeatureGroup(
-            None,
-            None,
-            description,
-            None,
-            id=feature_group.id,
-            features=feature_group.features,
-        )
-        self._feature_group_api.update_metadata(
-            feature_group, copy_feature_group, "updateMetadata"
-        )
-
-    def get_avro_schema(self, feature_group):
-        return self._kafka_api.get_topic_subject(feature_group._online_topic_name)
-
-    def get_kafka_config(self, online_write_options):
-        config = {
-            "kafka.bootstrap.servers": ",".join(
-                [
-                    endpoint.replace("INTERNAL://", "")
-                    for endpoint in self._kafka_api.get_broker_endpoints()
-                ]
-            ),
-            "kafka.security.protocol": "SSL",
-            "kafka.ssl.truststore.location": client.get_instance()._get_jks_trust_store_path(),
-            "kafka.ssl.truststore.password": client.get_instance()._cert_key,
-            "kafka.ssl.keystore.location": client.get_instance()._get_jks_key_store_path(),
-            "kafka.ssl.keystore.password": client.get_instance()._cert_key,
-            "kafka.ssl.key.password": client.get_instance()._cert_key,
-            "kafka.ssl.endpoint.identification.algorithm": "",
-        }
-        return {**online_write_options, **config}
 
     def insert_stream(
         self,

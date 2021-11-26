@@ -60,7 +60,9 @@ class TransformationFunction:
             self._load_source_code(self._source_code_content)
 
     def save(self, df, format='tfrecords',path="s3://"):
-        """transformate the feature store dataset into output format and landing to target location."""
+        """
+            transformate the feature store dataset into output format and landing to target location.
+        """
         if format == 'tfrecords':
             df.write.format("tfrecords").mode("overwrite").save(path)
         else if format == 'libsvm':
@@ -75,40 +77,6 @@ class TransformationFunction:
         self._transformation_function_engine.delete(self)
 
 
-
-    @staticmethod
-    def _get_module_path(module_name):
-        def _get_module_path(module):
-            return module.__file__
-
-        module_path = {}
-        exec(
-            """import %s\nmodule_path["path"] = _get_module_path(%s)"""
-            % (module_name, module_name)
-        )
-        return module_path["path"]
-
-    @staticmethod
-    def _get_module_imports(path):
-        imports = []
-        with open(path) as fh:
-            root = ast.parse(fh.read(), path)
-
-        for node in ast.iter_child_nodes(root):
-            if isinstance(node, ast.Import):
-                imported_module = False
-            elif isinstance(node, ast.ImportFrom):
-                imported_module = node.module
-            else:
-                continue
-
-            for n in node.names:
-                if imported_module:
-                    import_line = "from " + imported_module + " import " + n.name
-                else:
-                    import_line = "import " + n.name + " as " + n.asname
-                imports.append(import_line)
-        return imports
 
     def _load_source_code(self, source_code_content):
         source_code_content = json.loads(source_code_content)

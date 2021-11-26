@@ -1,19 +1,3 @@
-#
-#   Copyright 2020 Logical Clocks AB
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
-
 import numpy
 import datetime
 from typing import Optional, Union, List, Dict, TypeVar
@@ -36,9 +20,6 @@ class FeatureStore:
         self._name = featurestore_name
         self._description = featurestore_description
         self._s3_store_path = s3_store_path
-        self._transformation_function_engine = (
-            transformation_function_engine.TransformationFunctionEngine(self._name)
-        )
 
 
 
@@ -128,10 +109,7 @@ class FeatureStore:
 
             1. tfrecord
             2. csv
-            3. tsv
-            4. parquet
-            5. avro
-            6. orc
+            3. libsvm
 
             Currently not supported petastorm, hdf5 and npy file formats.
         # Returns:

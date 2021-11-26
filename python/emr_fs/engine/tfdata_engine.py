@@ -207,29 +207,6 @@ class TFDataEngine:
         process: Optional[bool] = False,
     ):
         """
-        Reads csv files and returns `CsvDatasetV2` or `PrefetchDataset` object, depending on `process` set to `False`
-        or `True`, respectively.
-
-        If `process` set to `False` returned object `CsvDatasetV2` can be further processed by user. For example
-        applying custom transformations to features, batching, caching etc. `process=True` will return `PrefetchDataset`
-        object, that contains tuple of feature vector and label, already batched and ready to input into model training.
-
-        !!! example "Example of using tf_record_dataset:"
-            ```python
-            connection = emr_fs.connection()
-            fs = connection.get_feature_store();
-            td = fs.get_training_dataset("sample_model", 1)
-            td.tf_data(target_name = "id").tf_csv_dataset(batch_size=1, num_epochs=1, process=True)
-            ```
-        # Arguments
-            batch_size: Size of batch, defaults to `None`.
-            num_epochs: Number of epochs to train, defaults to `None`.
-            one_hot_encode_labels: If set true then one hot encode labels, defaults to `False`.
-            num_classes: If above true then provide number of target classes, defaults to  `None`.
-            process: If set true api will optimise tf data read operation, and return feature vector for model
-                with single input, defaults to `False`.
-            serialized_ndarray_fname: Names of features that contain serialised multi dimensional arrays, defaults to `[]`.
-
         # Returns
             `PrefetchDataset`. If `process` is set to `True`. <br/>
             `CsvDatasetV2`. If `process` is set to `False`.
