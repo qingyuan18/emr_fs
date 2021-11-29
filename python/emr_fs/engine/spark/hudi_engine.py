@@ -60,21 +60,17 @@ class HudiEngine:
 
     def __init__(
         self,
-        feature_store_id,
         feature_store_name,
-        feature_group,
+        feature_group_name,
+        s3_location_path,
         spark_context,
         spark_session,
     ):
         self._feature_group = feature_group
         self._spark_context = spark_context
         self._spark_session = spark_session
-        self._feature_store_id = feature_store_id
         self._feature_store_name = feature_store_name
-        self._base_path = self._feature_group.location
-        self._table_name = feature_group._get_online_table_name()
-
-        self._primary_key = ",".join(feature_group.primary_key)
+        self._s3_location_path = self.s3_location_path
 
         # add event time to primary key for upserts
         if feature_group.event_time is not None:

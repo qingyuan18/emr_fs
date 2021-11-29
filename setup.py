@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.1",
     author="Jeff Tang",
     author_email="tangqy@amazon.com",
-    description="emr online featurestore for sagemaker package",
+    description="emr offline featurestore for sagemaker package",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/qingyuan18/emr_fs",

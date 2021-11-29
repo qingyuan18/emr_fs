@@ -35,19 +35,7 @@ class TrainingDatasetEngine:
     APPEND = "append"
     ENTITY_TYPE = "trainingdatasets"
 
-    def __init__(self, feature_store_id):
-        self._training_dataset_api = training_dataset_api.TrainingDatasetApi(
-            feature_store_id
-        )
-        self._tags_api = tags_api.TagsApi(feature_store_id, self.ENTITY_TYPE)
-        self._storage_connector_api = storage_connector_api.StorageConnectorApi(
-            feature_store_id
-        )
-        self._transformation_function_engine = (
-            transformation_function_engine.TransformationFunctionEngine(
-                feature_store_id
-            )
-        )
+
 
     def save(self, training_dataset, features, user_write_options):
         if isinstance(features, query.Query):
@@ -157,46 +145,7 @@ class TrainingDatasetEngine:
             row_dict[feature_name] = schema.read(decoder)
         return row_dict
 
-    def get_serving_vector(self, training_dataset, entry, external):
-        """Assembles serving vector from online feature store."""
 
-        serving_vector = []
-
-        if training_dataset.prepared_statements is None:
-            self.init_prepared_statement(training_dataset, external)
-
-        # check if primary key map correspond to serving_keys.
-        if not entry.keys() == training_dataset.serving_keys:
-            raise ValueError(
-                "Provided primary key map doesn't correspond to serving_keys"
-            )
-
-        prepared_statements = training_dataset.prepared_statements
-
-        # get schemas for complex features once
-        complex_features = self.get_complex_feature_schemas(training_dataset)
-
-        for prepared_statement_index in prepared_statements:
-            prepared_statement = prepared_statements[prepared_statement_index]
-            with training_dataset.prepared_statement_engine.connect() as mysql_conn:
-                result_proxy = mysql_conn.execute(prepared_statement, entry).fetchall()
-            result_dict = {}
-            for row in result_proxy:
-                result_dict = self.deserialize_complex_features(
-                    complex_features, dict(row.items())
-                )
-                if not result_dict:
-                    raise Exception(
-                        "No data was retrieved from online feature store using input "
-                        + entry
-                    )
-                # apply transformation functions
-                result_dict = self._apply_transformation(
-                    training_dataset.transformation_functions, result_dict
-                )
-            serving_vector += list(result_dict.values())
-
-        return serving_vector
 
     def init_prepared_statement(self, training_dataset, external):
         online_conn = self._storage_connector_api.get_online_connector()

@@ -9,13 +9,11 @@ from emr_fs.statistics_config import StatisticsConfig
 class FeatureStore:
     def __init__(
         self,
-        emr_cluster_id,
         emr_master_node,
         featurestore_name,
         s3_store_path,
         featurestore_description,
     ):
-        self._emr_cluster_id = emr_cluster_id
         self._emr_master_node= emr_master_node
         self._name = featurestore_name
         self._description = featurestore_description
@@ -88,21 +86,11 @@ class FeatureStore:
 
     def create_training_dataset(
         self,
-        name: str,
-        version: Optional[int] = None,
-        description: Optional[str] = "",
+        Query,
         data_format: Optional[str] = "tfrecords",
-        coalesce: Optional[bool] = False,
-        storage_connector: Optional[storage_connector.StorageConnector] = None,
-        splits: Optional[Dict[str, float]] = {},
-        location: Optional[str] = "",
-        seed: Optional[int] = None,
-        statistics_config: Optional[Union[StatisticsConfig, bool, dict]] = None,
-        label: Optional[List[str]] = [],
-        transformation_functions: Optional[Dict[str, TransformationFunction]] = {},
+        target_s3_path: str = None
     ):
         """Create a training dataset metadata object.
-
         !!! info "Data Formats"
             The feature store currently supports the following data formats for
             training datasets:
@@ -110,10 +98,8 @@ class FeatureStore:
             1. tfrecord
             2. csv
             3. libsvm
-
-            Currently not supported petastorm, hdf5 and npy file formats.
         # Returns:
-            `TrainingDataset`: The training dataset metadata object.
+            Sink The training dataset into S3 target path.
         """
         return training_dataset.TrainingDataset(
             name=name,
@@ -132,35 +118,19 @@ class FeatureStore:
         )
 
     @property
-    def id(self):
+    def emr_master_node(self):
         """Id of the feature store."""
-        return self._id
+        return self._emr_master_node
 
     @property
-    def name(self):
+    def featurestore_name(self):
         """Name of the feature store."""
-        return self._name
-
+        return self._featurestore_name
 
 
     @property
-    def description(self):
+    def s3_store_path(self):
         """Description of the feature store."""
-        return self._description
-
-    @property
-    def online_featurestore_name(self):
-        """Name of the online feature store database."""
-        return self._online_feature_store_name
+        return self._s3_store_path
 
 
-
-    @property
-    def hive_endpoint(self):
-        """Hive endpoint for the offline feature store."""
-        return self._hive_endpoint
-
-    @property
-    def offline_featurestore_name(self):
-        """Name of the offline feature store database."""
-        return self._offline_feature_store_name
