@@ -12,17 +12,14 @@ class Query:
         self,
         feature_store=None,
         feature_group=None,
-        join_feature_groups=[],
-        join_feature_group_keys={},
-        features=[],
         engine_type='spark',
         emr_master_node=None
     ):
         self._feature_store = feature_store
         self._feature_group = feature_group
-        self._join_feature_groups = join_feature_groups
-        self._join_feature_group_keys = join_feature_group_keys
-        self._features = features
+        self._join_feature_groups = []
+        self._join_feature_group_keys = {}
+        self._features = []
         self._sqlSelect = "select "
         self._sqlJoin = ""
         self._sqlWhere = ""
@@ -31,6 +28,18 @@ class Query:
            self._engine = FeatureStoreSparkEngine()
         else
            self._engine=FeatureStoreHiveEngine(emr_master_node)
+
+    def select_all(self):
+         """select all the feature group dataset.
+         """
+         self._features.append(self.feature_group._features)
+         return self
+
+    def select(features=[]):
+         """select subset of the feature group dataset.
+         """
+         self._features.append(features)
+         return self
 
     def show(self,lines:int):
          """Show the first N rows of the Query.
@@ -43,12 +52,13 @@ class Query:
            full_query = full_query + feature.get_feature_group+"."+feature.feature_name + ","
         full_query = full_query + " from " + self._feature_group.get_feature_group_name()
         for  join_feature_group in self._join_feature_groups
-            full_query = full_query+ " left join "+join_feature_group.get_feature_group_name() + " on "+self._feature_group.get_feature_group_name + "." + self._feature_group.get_feature_unique_key +"="+self._join_feature_group_keys[join_feature_group.get_feature_group_name()]
-            full_query = full_query + ", "
+            full_query = full_query+ " left join "+join_feature_group.get_feature_group_name() +
+                                     " on "+self._feature_group.get_feature_group_name + "." + self._feature_group.get_feature_unique_key +"="+self._join_feature_group_keys[join_feature_group.get_feature_group_name()]
+            full_query = full_query + ","
         full_query=" where "+self._sqlWhere
         return self._engine.query(full_query,lines)
 
-    def join(Query query,join_key=""):
+    def join(Query query,join_key=None):
         """join other query
         # Arguments
             query: another query instance.
@@ -65,17 +75,4 @@ class Query:
         return self
 
 
-
-    def show(self, n: int, online: Optional[bool] = False):
-        """Show the first N rows of the Query.
-
-        # Arguments
-            n: Number of rows to show.
-            online: Show from online storage. Defaults to `False`.
-        """
-        sql_query, online_conn = self._prep_read(online, {})
-
-        return engine.get_instance().show(
-            sql_query, self._feature_store_name, n, online_conn
-        )
 

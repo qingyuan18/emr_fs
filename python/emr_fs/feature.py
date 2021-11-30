@@ -128,29 +128,6 @@ class Feature:
     def default_value(self, default_value):
         self._default_value = default_value
 
-    def __lt__(self, other):
-        return filter.Filter(self, filter.Filter.LT, other)
-
-    def __le__(self, other):
-        return filter.Filter(self, filter.Filter.LE, other)
-
-    def __eq__(self, other):
-        return filter.Filter(self, filter.Filter.EQ, other)
-
-    def __ne__(self, other):
-        return filter.Filter(self, filter.Filter.NE, other)
-
-    def __ge__(self, other):
-        return filter.Filter(self, filter.Filter.GE, other)
-
-    def __gt__(self, other):
-        return filter.Filter(self, filter.Filter.GT, other)
-
-    def contains(self, other):
-        return filter.Filter(self, filter.Filter.IN, json.dumps(other))
-
     def __str__(self):
         return self.json()
 
-    def __repr__(self):
-        return f"Feature({self._name!r}, {self._type!r}, {self._description!r}, {self._primary}, {self._partition}, {self._online_type!r}, {self._default_value!r}, {self._feature_group_id!r})"

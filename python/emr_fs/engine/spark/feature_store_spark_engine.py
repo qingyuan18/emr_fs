@@ -17,7 +17,6 @@
 import json
 import datetime
 import importlib.util
-
 import numpy as np
 import pandas as pd
 
@@ -48,24 +47,14 @@ class FeatureStoreSparkEngine:
         self._spark_session.conf.set("hive.exec.dynamic.partition.mode", "nonstrict")
         self._spark_session.conf.set("spark.sql.hive.convertMetastoreParquet", "false")
 
-        if importlib.util.find_spec("pydoop"):
-            # If we are on Databricks don't setup Pydoop as it's not available and cannot be easily installed.
-            util.setup_pydoop()
 
     def query(full_query,lines):
-        self._spark_context.sql(full_query).show(lines)
+        if lines != 0:
+           self._spark_context.sql(full_query).show(lines)
+        else :
+           self._spark_context.sql(full_query).show()
 
 
-    def register_on_demand_temporary_table(self, on_demand_fg, alias):
-        on_demand_dataset = on_demand_fg.storage_connector.read(
-            on_demand_fg.query,
-            on_demand_fg.data_format,
-            on_demand_fg.options,
-            on_demand_fg.storage_connector._get_path(on_demand_fg.path),
-        )
-
-        on_demand_dataset.createOrReplaceTempView(alias)
-        return on_demand_dataset
 
     def register_hudi_temporary_table(
         self, hudi_fg_alias, feature_store_id, feature_store_name, read_options
@@ -203,38 +192,7 @@ class FeatureStoreSparkEngine:
             options.update(provided_options)
         return options
 
-    def parse_schema_feature_group(self, dataframe):
-        return [
-            feature.Feature(
-                feat.name.lower(),
-                feat.dataType.simpleString(),
-                feat.metadata.get("description", ""),
-            )
-            for feat in dataframe.schema
-        ]
 
-
-
-    def training_dataset_schema_match(self, dataframe, schema):
-        schema_sorted = sorted(schema, key=lambda f: f.index)
-        insert_schema = dataframe.schema
-        if len(schema_sorted) != len(insert_schema):
-            raise SchemaError(
-                "Schemas do not match. Expected {} features, the dataframe contains {} features".format(
-                    len(schema_sorted), len(insert_schema)
-                )
-            )
-
-        i = 0
-        for feat in schema_sorted:
-            if feat.name != insert_schema[i].name.lower():
-                raise SchemaError(
-                    "Schemas do not match, expected feature {} in position {}, found {}".format(
-                        feat.name, str(i), insert_schema[i].name
-                    )
-                )
-
-            i += 1
 
 
 
@@ -243,23 +201,6 @@ class FeatureStoreSparkEngine:
             return True
         return False
 
-    def get_empty_appended_dataframe(self, dataframe, new_features):
-        dataframe = dataframe.limit(0)
-        for f in new_features:
-            dataframe = dataframe.withColumn(f.name, lit(None).cast(f.type))
-        return dataframe
-
-    def save_empty_dataframe(self, feature_group, dataframe):
-        """Wrapper around save_dataframe in order to provide no-op in hive engine."""
-        self.save_dataframe(
-            feature_group,
-            dataframe,
-            "upsert",
-            feature_group.online_enabled,
-            "offline",
-            {},
-            {},
-        )
 
 
 
