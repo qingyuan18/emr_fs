@@ -33,6 +33,7 @@ class FeatureGroup:
         self._feature_unique_key = feature_unique_key
         self._feature_eventtime_key = feature_eventtime_key
         self._features = features
+        self._query = None
 
 
     def delete(self):
@@ -46,21 +47,37 @@ class FeatureGroup:
         # Returns
             `Query`. A query object with all features of the feature group.
         """
-        query = Query(self.feature_store.get_feature_store_name(),self,'spark',None)
-        return query.select_all()
+
+           self._query.select_all()
+        return self._query
+
+    def timeQuery(self,beginTimeStamp,endTimeStamp):
+        if self._query is None:
+           self._query = Query(self.feature_store.get_feature_store_name(),self,'spark',None)
+           self._query.timeQuery(beginTimeStamp,endTimeStamp)
+        return self._query
 
     def select(self, features:= []):
         """Select a subset of features of the feature group and return a query object.
         """
-       query = Query(self.feature_store.get_feature_store_name(),self,'spark',None)
-       return query.select(features)
+       if self._query is None:
+          self._query = Query(self.feature_store,self,'spark',None)
+       return self.query.select(features)
 
     def ingestion(self,dataframe):
        """use spark engine(which will use hudi engine internal) to ingest  into feature group"""
+       self._
        pass
 
 
-
+    def create_training_dataset(self,
+            name = “userProfile dataset",
+            data_format = "tfrecord",
+            startDt="2020-10-20 07:31:38",
+            endDt= "2020-10-20 07:34:11“,
+            outputLoc = "s3://emr_fs/output/userProfile"):
+        query = Query(self.feature_store.get_feature_store_name(),self,'spark',None)
+        query.create_training_dataset(name,data_format,startDt,endDt,outputLoc)
 
 
     def get_feature(self, name: str):

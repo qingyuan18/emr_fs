@@ -35,18 +35,14 @@ class Query:
          self._features.append(self.feature_group._features)
          return self
 
-    def select(features=[]):
+    def select(self,features=[]):
          """select subset of the feature group dataset.
          """
          self._features.append(features)
          return self
 
-    def show(self,lines:int):
-         """Show the first N rows of the Query.
-        # Arguments
-            n: Number of rows to show.
-            online: Show from online storage. Defaults to `False`.
-        """
+
+    def pareseSql(self):
         full_query="select "
         for feature in self._features:
            full_query = full_query + feature.get_feature_group+"."+feature.feature_name + ","
@@ -56,9 +52,34 @@ class Query:
                                      " on "+self._feature_group.get_feature_group_name + "." + self._feature_group.get_feature_unique_key +"="+self._join_feature_group_keys[join_feature_group.get_feature_group_name()]
             full_query = full_query + ","
         full_query=" where "+self._sqlWhere
-        return self._engine.query(full_query,lines)
+        return full_query
 
-    def join(Query query,join_key=None):
+    def show(self,lines:int):
+         """Show the first N rows of the Query.
+        # Arguments
+            n: Number of rows to show.
+            online: Show from online storage. Defaults to `False`.
+        """
+        full_query = self.pareseSql()
+        return self._engine.show(full_query,lines)
+
+
+
+    def create_training_dataset(self,
+            name = “userProfile dataset",
+            data_format = "tfrecord",
+            startDt="2020-10-20 07:31:38",
+            endDt= "2020-10-20 07:34:11“,
+            outputLoc = "s3://emr_fs/output/userProfile"):
+        timeQuery(startDt,engine)
+        full_query = self.pareseSql()
+        df = self._engine.query(full_query)
+        transfer = TransformationFunction(self,data_format,outputLoc)
+        transfer.save(data_format,df,None)
+
+
+
+    def join(self,Query query,join_key=None):
         """join other query
         # Arguments
             query: another query instance.
@@ -70,8 +91,8 @@ class Query:
            self._sqlSelect = " and " + self._sqlWhere
         return self
 
-    def timeQuery(begin_timestamp,end_timestamp):
-        self._sql = " "+self._feature_group+"._hoodie_commit_time>='"+begin_timestamp + "' and _hoodie_commit_time <='"+end_timestamp+"'"
+    def timeQuery(self,begin_timestamp,end_timestamp):
+        self._sqlWhere = " "+self._feature_group+"._hoodie_commit_time>='"+begin_timestamp + "' and _hoodie_commit_time <='"+end_timestamp+"'"
         return self
 
 

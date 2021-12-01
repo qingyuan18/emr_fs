@@ -1,5 +1,6 @@
 import numpy
 import datetime
+import re
 from typing import Optional, Union, List, Dict, TypeVar
 from emr_fs.transformation_function import TransformationFunction
 from emr_fs.engine.hive import FeatureStoreHiveEngine
@@ -21,9 +22,29 @@ class FeatureStore:
 
 
 
-    def get_feature_groups(self, name: str):
+    def get_feature_group(self, name: str):
         with FeatureStoreHiveEngine(emr_master_node) as engine:
-            return engine.get_feature_groups(name)
+            feature_group_info =  engine.get_feature_group(name)
+            feature_unique_key = ""
+            feature_eventtime_key = ""
+            features = []
+
+            tablePros = re.findMatch(feature_group_info,"TBLPROPERTIES(*)").split(",")
+            for property in tablePros:
+                if property.contains('feature_unique_key'):
+                   feature_unique_key=property.split("=")[1]
+                else property.contains("feature_eventtime_key"):
+                   feature_eventtime_key=property.split("=")[1]
+
+            tableColumns = re.findMatch(feature_group_info,name+"(*)")
+            for column in tableColumns:
+                name = column.split(" ")[0]
+                type = column.split(" ")[1]
+                feature = Feature(name,type)
+                features.append(feature)
+
+            feature_group = FeatureGroup(self,name,"",feature_unique_key,feature_eventtime_key,features)
+            return feature_group
 
 
 
@@ -36,6 +57,7 @@ class FeatureStore:
                 name=self._name,
                 desc=self._description,
                 location=self._s3_store_path)
+        return FeatureStore()
 
 
     def register_feature_group(
@@ -66,10 +88,8 @@ class FeatureStore:
         feature_group_name: str,
         desc: str = "",
         feature_unique_key: str,
-        feature_unique_key_type: str = "string",
         feature_eventtime_key: str,
-        feature_eventtime_key_type: str = "string",
-        feature_normal_keys:  = []
+        feature_keys:  = {}
     ):
         """Create a feature group metadata object.
         # Returns
@@ -81,6 +101,9 @@ class FeatureStore:
                    feature_eventtime_key,feature_eventtime_key_type,
                    feature_normal_keys)
             )
+        features = pares_features(feature_keys)
+        return FeatureGroup(feature_group_name,desc,feature_unique_key,feature_eventtime_key,features)
+
 
 
 

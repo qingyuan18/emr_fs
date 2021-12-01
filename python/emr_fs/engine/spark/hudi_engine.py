@@ -61,12 +61,12 @@ class HudiEngine:
 
     def __init__(
         self,
-        feature_group,
+        feature_group_name,
         spark_context,
         spark_session,
     ):
         self.
-        self._feature_group = feature_group
+        self._feature_group_name = feature_group_name
         self._spark_context = spark_context
         self._spark_session = spark_session
 
@@ -87,17 +87,14 @@ class HudiEngine:
 
 
 
-    def _setup_hudi_write_opts(self, operation):
-        _jdbc_url = self._get_conn_str()
+    def _setup_hudi_write_opts(self, operation, primary_key,partition_key,pre_combine_key):
         hudi_options = {
-            self.HUDI_PRECOMBINE_FIELD: self._pre_combine_key[0]
-            self.HUDI_RECORD_KEY: self._primary_key,
-            self.HUDI_PARTITION_FIELD: self._partition_path,
-            self.HUDI_TABLE_NAME: self._feature_group._feature_group_name,
+            self.HUDI_PRECOMBINE_FIELD: pre_combine_key
+            self.HUDI_RECORD_KEY: primary_key,
+            self.HUDI_PARTITION_FIELD: partition_key,
+            self.HUDI_TABLE_NAME: self._feature_group_name,
             self.HIVE_PARTITION_EXTRACTOR_CLASS_OPT_KEY: self.DEFAULT_HIVE_PARTITION_EXTRACTOR_CLASS_OPT_VAL
-            if len(self._partition_key) >= 1
-            else self.HIVE_NON_PARTITION_EXTRACTOR_CLASS_OPT_VAL,
-            self.HUDI_HIVE_SYNC_ENABLE: "true",
+             self.HUDI_HIVE_SYNC_ENABLE: "true",
             self.HUDI_HIVE_SYNC_TABLE: self._table_name,
             self.HUDI_HIVE_SYNC_JDBC_URL: _jdbc_url,
             self.HUDI_HIVE_SYNC_DB: self._feature_store_name,
@@ -105,12 +102,6 @@ class HudiEngine:
             self.HUDI_TABLE_OPERATION: operation,
             self.HUDI_SCHEMA_MERGE:"true"
         }
-
-        if operation.lower() in [self.HUDI_BULK_INSERT, self.HUDI_INSERT]:
-            hudi_options[self.HUDI_WRITE_INSERT_DROP_DUPLICATES] = "true"
-
-        if write_options:
-            hudi_options.update(write_options)
         return hudi_options
 
     def _setup_hudi_read_opts(self, start_timestamp, end_timestamp):
@@ -124,14 +115,3 @@ class HudiEngine:
 
 
 
-    def _get_conn_str(self):
-        credentials = {
-            "sslTrustStore": client.get_instance()._get_jks_trust_store_path(),
-            "trustStorePassword": client.get_instance()._cert_key,
-            "sslKeyStore": client.get_instance()._get_jks_key_store_path(),
-            "keyStorePassword": client.get_instance()._cert_key,
-        }
-
-        return self._connstr + ";".join(
-            ["{}={}".format(option[0], option[1]) for option in credentials.items()]
-        )

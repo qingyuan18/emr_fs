@@ -31,65 +31,12 @@ def exec_command(cmd: str, timeout=10) -> str:
     return result
 
 
-
-
-def validate_feature(ft):
-    if isinstance(ft, feature.Feature):
-        return ft
-    elif isinstance(ft, str):
-        return feature.Feature(ft)
-    elif isinstance(ft, dict):
-        return feature.Feature(**ft)
-
-
-def parse_features(feature_names):
-    if isinstance(feature_names, (str, feature.Feature)):
-        return [validate_feature(feature_names)]
-    elif isinstance(feature_names, list) and len(feature_names) > 0:
-        return [validate_feature(feat) for feat in feature_names]
-    else:
-        return []
-
-
-def feature_group_name(feature_group):
-    return feature_group.name + "_" + str(feature_group.version)
-
-
-def create_mysql_engine(online_conn, external):
-    online_options = online_conn.spark_options()
-    # Here we are replacing the first part of the string returned by Hopsworks,
-    # jdbc:mysql:// with the sqlalchemy one + username and password
-    # useSSL and allowPublicKeyRetrieval are not valid properties for the pymysql driver
-    # to use SSL we'll have to something like this:
-    # ssl_args = {'ssl_ca': ca_path}
-    # engine = create_engine("mysql+pymysql://<user>:<pass>@<addr>/<schema>", connect_args=ssl_args)
-    if external:
-        # This only works with external clients.
-        # Hopsworks clients should use the storage connector
-        online_options["url"] = re.sub(
-            "/[0-9.]+:",
-            "/{}:".format(client.get_instance().host),
-            online_options["url"],
-        )
-
-    sql_alchemy_conn_str = (
-        online_options["url"]
-        .replace(
-            "jdbc:mysql://",
-            "mysql+pymysql://"
-            + online_options["user"]
-            + ":"
-            + online_options["password"]
-            + "@",
-        )
-        .replace("useSSL=false&", "")
-        .replace("?allowPublicKeyRetrieval=true", "")
-    )
-
-    # default connection pool size kept by engine is 5
-    sql_alchemy_engine = create_engine(sql_alchemy_conn_str, pool_recycle=3600)
-    return sql_alchemy_engine
-
+def pares_features(feature_keys={}):
+    features = []
+    for key, value in feature_keys:
+        feature = Feature(key,value)
+        features.append(feature)
+    return features
 
 def get_timestamp_from_date_string(input_date):
     date_format_patterns = {

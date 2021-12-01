@@ -46,9 +46,9 @@ class FeatureStoreHiveEngine(feature_group_base_engine.FeatureBaseEngine):
 
     def create_feature_group(self,
                              feature_store_name,feature_group_name, desc,
-                             feature_unique_key,feature_unique_key_type,
-                             feature_eventtime_key,feature_eventtime_key_type,
-                             feature_normal_keys):
+                             feature_unique_key,
+                             feature_eventtime_key,
+                             features):
         cursor = self._con.cursor()
         cursor.execute("use "+feature_store_name+";")
         sql="CREATE EXTERNAL TABLE @feature_group_nm@( \n"+
@@ -57,8 +57,7 @@ class FeatureStoreHiveEngine(feature_group_base_engine.FeatureBaseEngine):
           "`_hoodie_record_key` string,\n"+
           "`_hoodie_partition_path` string,\n"+
           "`_hoodie_file_name` string,\n"+
-          "@feature_unique_key@,\n"+
-          "@feature_normal_keys@)\n"+
+          "@features@)\n"+
         "PARTITIONED BY (\n"+
         "  @feature_partitions@)\n"+
         "ROW FORMAT SERDE\n"+
@@ -69,18 +68,13 @@ class FeatureStoreHiveEngine(feature_group_base_engine.FeatureBaseEngine):
         "  'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat' \n"+
         "TBLPROPERTIES (@tableProps@)"
 
-        tableProps="'feature_unique_key'='"+feature_unique_key+":"+feature_unique_key_type+"',"
-        tableProps=tableProps+"'feature_partition_key='"+feature_partition_key+":"+feature_partition_key_type+"',"
-        partition_keys="("+feature_eventtime_key+" "+feature_eventtime_key_type+")"
-        normal_keys=""
-        tableProps=tableProps+"'feature_normal_keys='("
-        for feature_key in feature_normal_keys:
-           normal_keys.append(feature_key[0]+" "+feature_key[1]+",\n")
-           tableProps.append(feature_key[0]+":"+feature_key[1]+",")
-        tableProps.append("')")
-        sql=sql.replace("@feature_partitions@",partition_keys)
-        sql=sql.replace("@feature_unique_key@",feature_unique_key+" "+feature_unique_key_type)
-        sql=sql.replace("@feature_normal_keys@",normal_keys)
+        tableProps="'feature_unique_key'='"+feature_unique_key"',"
+        tableProps=tableProps+"'feature_partition_key='"+feature_partition_key+"'"
+        partition_keys=feature_eventtime_key+" "+feature_eventtime_key_type
+        columns=""
+        for feature in features:
+           columns.append(feature[0]+" "+feature[1]+",\n")
+        sql=sql.replace("@feature_normal_keys@",columns)
         sql=sql.replace("@tableProps@",tableProps)
         cursor.execute(sql)
         self.logger.info("create emr feature group "+feature_group_name + "in "+ feature_store_name+" result:")
@@ -98,36 +92,21 @@ class FeatureStoreHiveEngine(feature_group_base_engine.FeatureBaseEngine):
         self.logger.info("created emr feature store: "+name)
 
 
-    def get_feature_groups(feature_store_name,feature_group_name):
-        cmd = "line=$(hive -e \"use @db_name@; show tables\") && echo $line".replace("@db_name@",feature_store_name)
-        feature_groups = exec_command(cmd,60).split(" ")
-        ret_feature_groups=[]
-        for feature_group in feature_groups:
-            if feature_group.contains(feature_group_name):
-               ret_feature_groups.append(feature_group)
-        return ret_feature_groups
+    def get_feature_group(feature_store_name,feature_group_name):
+        cursor = self._con.cursor()
+        sql = "show create table "+feature_store_name+ "."+feature_group_name+";"
+        cursor.execute(sql)
+        results = cursor.fetchall()
+        columns = [col[0].split('.')[-1] for col in cursor.description]
+        data = pd.DataFrame(data=data, columns=columns)
+        self.logger.info("get feature groups:"+ret_feature_groups)
+        return results
 
-
-    def inspect_feature_group(feature_store_name,feature_group_name):
-        cmd = "emr_fs_exec.sh inspect "+feature_store_name + " feature_group_name"
-        features = exec_command(cmd,60).split(" ")
-        return features
 
     def delete(self, feature_group):
         self._feature_group_api.delete(feature_group)
 
 
-
-    def sql(self, query, feature_store_name, dataframe_type, online, read_options):
-        if online and self._online_conn is None:
-            self._online_conn = self._storage_connector_api.get_online_connector()
-        return engine.get_instance().sql(
-            query,
-            feature_store_name,
-            self._online_conn if online else None,
-            dataframe_type,
-            read_options,
-        )
 
     def append_features(self, feature_group, new_features):
         """Appends features to a feature group."""
