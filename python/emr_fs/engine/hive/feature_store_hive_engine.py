@@ -25,19 +25,13 @@ class FeatureStoreHiveEngine(feature_group_base_engine.FeatureBaseEngine):
 
     def register_feature_group(self,
                              feature_store_name,feature_group_name, desc,
-                             feature_unique_key,feature_unique_key_type,
-                             feature_eventtime_key,feature_eventtime_key_type,
-                             feature_normal_keys):
+                             feature_unique_key,
+                             feature_eventtime_key):
         cursor = self._con.cursor()
         cursor.execute("use "+feature_store_name+";")
-        sql = "alter table  @feature_group_nm@ set tblproperties ('feature_unique_key'='@feature_unique_key_pairs@')".replace("@feature_group_nm@",feature_group_name).replace("@feature_unique_key_pairs@",feature_unique_key+":"+feature_unique_key_type)
+        sql = "alter table  @feature_group_nm@ set tblproperties ('feature_unique_key'='@feature_unique_key@')".replace("@feature_group_nm@",feature_group_name).replace("@feature_unique_key@",feature_unique_key)
         cursor.execute(sql)
-        sql = "alter table  @feature_group_nm@ set tblproperties ('feature_eventtime_key'='@feature_eventtime_key_pairs@')".replace("@feature_group_nm@",feature_group_name).replace("@feature_eventtime_key_pairs@",feature_eventtime_key+":"+feature_eventtime_key_type)
-        cursor.execute(sql)
-        normal_keys=""
-        for feature_key in feature_normal_keys:
-            normal_keys.append(feature_key[0]+":"+feature_key[1]+",\n")
-        sql = "alter table  @feature_group_nm@ set tblproperties ('feature_normal_keys'='@feature_normal_key_pairs@')".replace("@feature_group_nm@",feature_group_name).replace("@feature_normal_key_pairs@",normal_keys)
+        sql = "alter table  @feature_group_nm@ set tblproperties ('feature_eventtime_key'='@feature_eventtime_key@')".replace("@feature_group_nm@",feature_group_name).replace("@feature_eventtime_key@",feature_eventtime_key)
         cursor.execute(sql)
         self.logger.info("register emr feature group "+feature_group_name + "in "+ feature_store_name+" result:")
         for result in cursor.fetchall():

@@ -127,24 +127,7 @@ class FeatureGroup:
     def primary_key(self, new_primary_key):
         self._primary_key = [pk.lower() for pk in new_primary_key]
 
-    def get_statistics(self, commit_time: str = None):
-        """Returns the statistics for this feature group at a specific time.
 
-        If `commit_time` is `None`, the most recent statistics are returned.
-
-        # Arguments
-            commit_time: Commit time in the format `YYYYMMDDhhmmss`, defaults to `None`.
-
-        # Returns
-            `Statistics`. Statistics object.
-
-        # Raises
-            `RestAPIError`.
-        """
-        if commit_time is None:
-            return self.statistics
-        else:
-            return self._statistics_engine.get(self, commit_time)
 
 
 

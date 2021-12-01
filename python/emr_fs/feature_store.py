@@ -29,7 +29,10 @@ class FeatureStore:
             feature_eventtime_key = ""
             features = []
 
-            tablePros = re.findMatch(feature_group_info,"TBLPROPERTIES(*)").split(",")
+            matchObj = re.findall(r'[(](.*?)[)]', str1)[0]
+            tableColumns = matchObj[0]
+            tablePros = matchObj[1]
+
             for property in tablePros:
                 if property.contains('feature_unique_key'):
                    feature_unique_key=property.split("=")[1]
@@ -44,7 +47,7 @@ class FeatureStore:
                 features.append(feature)
 
             feature_group = FeatureGroup(self,name,"",feature_unique_key,feature_eventtime_key,features)
-            return feature_group
+        return feature_group
 
 
 
@@ -65,10 +68,7 @@ class FeatureStore:
         feature_group_name: str,
         desc: str = "",
         feature_unique_key: str,
-        feature_unique_key_type: str = "string",
         feature_eventtime_key: str,
-        feature_eventtime_key_type: str = "string",
-        feature_normal_keys:  = []
     ):
        """register a feature group metadata object in a exsiting hudi table.
             # Returns
