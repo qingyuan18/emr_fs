@@ -6,7 +6,10 @@ class Log(object):
   def __init__(self,type):
     # 定义对应的程序模块名name，默认为root
     self.logger = logging.getLogger()
-    logconf=open('./logging.conf',encoding='UTF-8')
+    work_dir = os.path.dirname(os.path.abspath(__file__))
+    print(work_dir)
+    CONF_FILE = os.path.join(work_dir,'./logging.conf')
+    logconf=open(CONF_FILE,encoding='UTF-8')
     logging.config.fileConfig(logconf)
     logconf.close()
     if type=='file':
