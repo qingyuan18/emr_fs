@@ -1,7 +1,0 @@
-numpy
-pandas
-spark-tensorflow-connector
-pyhive
-thrift
-sasl
-thrift-sasl

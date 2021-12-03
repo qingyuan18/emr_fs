@@ -1,1 +1,0 @@
-create database if not exists emr_feature_store location 's3://emrfssampledata/emr_feature_store/'
