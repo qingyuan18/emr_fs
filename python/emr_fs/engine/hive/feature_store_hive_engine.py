@@ -91,42 +91,18 @@ class FeatureStoreHiveEngine(feature_group_base_engine.FeatureBaseEngine):
         sql = "show create table "+feature_store_name+ "."+feature_group_name+";"
         cursor.execute(sql)
         results = cursor.fetchall()
-        columns = [col[0].split('.')[-1] for col in cursor.description]
-        data = pd.DataFrame(data=data, columns=columns)
-        self.logger.info("get feature groups:"+ret_feature_groups)
+        self.logger.info("get feature groups:"+results)
         return results
 
 
-    def delete(self, feature_group):
-        self._feature_group_api.delete(feature_group)
 
 
-
-    def append_features(self, feature_group, new_features):
-        """Appends features to a feature group."""
-        # first get empty dataframe of current version and append new feature
-        # necessary to write empty df to the table in order for the parquet schema
-        # which is used by hudi to be updated
-        df = engine.get_instance().get_empty_appended_dataframe(
-            feature_group.read(), new_features
-        )
-
-        # perform changes on copy in case the update fails, so we don't leave
-        # the user object in corrupted state
-        copy_feature_group = fg.FeatureGroup(
-            None,
-            None,
-            None,
-            None,
-            id=feature_group.id,
-            features=feature_group.features + new_features,
-        )
-        self._feature_group_api.update_metadata(
-            feature_group, copy_feature_group, "updateMetadata"
-        )
-
-        # write empty dataframe to update parquet schema
-        engine.get_instance().save_empty_dataframe(feature_group, df)
+    def append_features(self, feature_store_name, feature_group_name, new_feature_key,new_feature_key_type):
+        cursor = self._con.cursor()
+        sql = "alter table "+feature_store_name+"."+feature_group_name+" add column ('"+new_feature_key+","+new_feature_key_type+"');"
+        cursor.execute(sql)
+        results = cursor.fetchall()
+        self.logger.info("add new_feature :"+new_feature_key+":"+new_feature_key_type+" in "+feature_group_name+"."+feature_group_name)
 
 
 
