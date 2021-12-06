@@ -18,12 +18,14 @@ class Client(object):
         self._feature_store = None
         self.logger = Log("console")
 
-    def create_feature_store(emr_master_node,name,s3_location_path,desc):
+    def create_feature_store(name,s3_location_path,desc):
         self._feature_store = FeatureStore(emr_master_node,name,s3_location_path,desc)
         self._feature_store.create_feature_store()
+        return self._feature_store
 
-    def connect_to_feature_store(emr_master_node,name):
+    def connect_to_feature_store(name):
         self._feature_store = FeatureStore(emr_master_node,name,None,None)
+        return self._feature_store
 
     def get_feature_group(name):
         if self._feature_store is None:

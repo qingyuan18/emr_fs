@@ -37,7 +37,7 @@ class FeatureGroup:
 
 
     def delete(self):
-        with FeatureStoreHiveEngine(emr_master_node) as engine:
+        with FeatureStoreSparkEngine(emr_master_node) as engine:
              engine.delete(self.feature_group_name)
 
     def select_all(self):
@@ -53,7 +53,7 @@ class FeatureGroup:
 
     def timeQuery(self,beginTimeStamp,endTimeStamp):
         if self._query is None:
-           self._query = Query(self.feature_store.get_feature_store_name(),self,'spark',None)
+           self._query = Query(self._feature_store.get_feature_store_name(),self,'spark',None)
            self._query.timeQuery(beginTimeStamp,endTimeStamp)
         return self._query
 
@@ -66,16 +66,35 @@ class FeatureGroup:
 
     def ingestion(self,dataframe):
        """use spark engine(which will use hudi engine internal) to ingest  into feature group"""
-       self._
-       pass
+       feature_group_location = self._feature_store.s3_store_path()
+       with FeatureStoreSparkEngine() as engine:
+            engine.save_dataframe(
+                           self._feature_group_name,
+                           feature_group_location,
+                           dataframe,
+                           "append",
+                           self._feature_unique_key,
+                           self._feature_eventtime_key)
+
+    def ingestion(self,source_dataset_location):
+           """use spark engine(which will use hudi engine internal) to ingest  into feature group"""
+       feature_group_location = self._feature_store.s3_store_path()+"/"+self._feature_group_name+"/"
+       with FeatureStoreSparkEngine() as engine:
+            engine.save_s3_dataset(
+                           self._feature_group_name,
+                           feature_group_location,
+                           source_dataset_location,
+                           "overwrite",
+                           self._feature_unique_key,
+                           self._feature_eventtime_key)
 
 
     def create_training_dataset(self,
-            name = “userProfile dataset",
+            name ,
             data_format = "tfrecord",
-            startDt="2020-10-20 07:31:38",
-            endDt= "2020-10-20 07:34:11“,
-            outputLoc = "s3://emr_fs/output/userProfile"):
+            startDt,
+            endDt,
+            outputLoc ):
         query = Query(self.feature_store.get_feature_store_name(),self,'spark',None)
         query.create_training_dataset(name,data_format,startDt,endDt,outputLoc)
 

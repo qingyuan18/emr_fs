@@ -128,8 +128,36 @@ class FeatureStoreSparkEngine:
 
     def append_features(self, feature_store_name, feature_group_name, new_feature_key,new_feature_key_type):
         sql = "alter table "+feature_store_name+"."+feature_group_name+" add column ('"+new_feature_key+","+new_feature_key_type+"');"
-        df=self._spark_session.sql(sql)
-        self.logger.info("add new_feature :"+new_feature_key+":"+new_feature_key_type+" in "+feature_group_name+"."+fe
+        try:
+           df=self._spark_session.sql(sql)
+           self.logger.info("add new_feature :"+new_feature_key+":"+new_feature_key_type+" in "+feature_group_name+"."+fe
+        exceptions Exception as e:
+           raise FeatureStoreException(
+                           "Error add new feature:" + str(e)
+                       )
+
+    def save_s3_dataset(
+            self,
+            feature_group_name,
+            feature_group_location,
+            source_s3_location,
+            operation,
+            feature_unique_key,
+            feature_eventtime_key
+        ):
+            hudi_engine = HudiEngine(feature_group,self._spark_context,self._spark_session)
+            hudi_options = hudi_engine._setup_hudi_write_opts(operation, primary_key=feature_unique_key,partition_key=feature_eventtime_key,pre_combine_key=feature_eventtime_key)
+            dataframe = _spark_session.read.format("org.apache.hudi").load(source_s3_location)
+            try:
+                dataframe.write.format("hudi"). \
+                     	options(**hudi_options). \
+                     	mode("append"). \
+                     	save(feature_group_location)
+            exceptions Exception as e::
+                raise FeatureStoreException(
+                    "Error writing to offline feature group :" + str(e)
+                )
+
 
     def save_dataframe(
         self,
@@ -147,9 +175,9 @@ class FeatureStoreSparkEngine:
                  	options(**hudi_options). \
                  	mode("append"). \
                  	save(feature_group_location)
-        exceptions:
+        exceptions Exception as e::
             raise FeatureStoreException(
-                "Error writing to offline feature group."
+                "Error writing to offline feature group :" + str(e)
             )
 
 
